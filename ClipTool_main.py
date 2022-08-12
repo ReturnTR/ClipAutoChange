@@ -8,41 +8,9 @@ import time
 from PyQt5.QtCore import QThread, pyqtSignal
 from FileLabelMode import *
 from PyQt5 import QtGui, QtWidgets
-import json
-
-
-"""
-后期应该抽象出几个工具UI出来
-如何添加撤销操作
-"""
-
-def save_json(data,filename):
-    """将数据保存在json文件中"""
-
-    data = json.dumps(data, sort_keys=True, indent=4, separators=(',', ': '), ensure_ascii=False)
-    with open(filename, 'w', encoding='utf-8') as file:
-        file.write(data)
-
-def get_json(json_file):
-    with open(json_file, 'r', encoding='utf-8')as file:
-        data=json.loads(file.read())
-    return data
-
-def cut_data_ave(data,ave_len=3):
-    """
-    根据长度平分
-    返回的data比原来多一维
-    list和str均可
-    """
-    new_data=[]
-    index=0
-    while index+ave_len<len(data):
-        new_data.append(data[index:index+ave_len])
-        index+=ave_len
-    new_data.append(data[index:])
-    return new_data
-
-
+from tools import *
+from FunPatterns import *
+import FunPatterns
 class ClipBoardThread(QThread):
     """
     异步获取剪切板到控件上
@@ -73,6 +41,8 @@ class ClipBoardThread(QThread):
                 time.sleep(0.2)
 
 class MainDialog(QMainWindow):
+
+
     def __init__(self, parent=None):
         super(QMainWindow, self).__init__(parent)
 
@@ -80,21 +50,20 @@ class MainDialog(QMainWindow):
         self.ui.setupUi(self)
 
         # 添加快捷添加控件
-        patterns=get_json("add_pattern.json")
+        patterns=get_module_functions(FunPatterns)
         self.ui.pushButton_patterns=[]
         i=0
         for pattern in patterns:
             i+=1
-            pattern="|".join(pattern)
             pushButton_pattern=QtWidgets.QPushButton(self.ui.centralwidget)
             font = QtGui.QFont()
             font.setPointSize(12)
             pushButton_pattern.setFont(font)
-            pushButton_pattern.setMaximumWidth(100)
-            pattern="\n".join(cut_data_ave(pattern,6))
+            # pushButton_pattern.setMaximumWidth(100)  # 设置宽度
+            # pattern="\n".join(cut_data_ave(pattern,6))
             pushButton_pattern.setText(pattern)
             pushButton_pattern.setShortcut('Ctrl+'+str(i))
-            pushButton_pattern.clicked.connect(lambda: self.add_pattern(self.sender().text()))
+            pushButton_pattern.clicked.connect(lambda: self.str_change_pattern(self.sender().text()))
             self.ui.verticalLayout_patterns.addWidget(pushButton_pattern)
             self.ui.pushButton_patterns.append(pushButton_pattern)
 
@@ -108,15 +77,15 @@ class MainDialog(QMainWindow):
         self.cbthread.start()
 
 
-    def add_pattern(self,pattern):
-        pattern=pattern.split("|")
+    def str_change_pattern(self,pattern):
         history=self.ui.plainTextEdit_history.toPlainText()
-        if "{}" not in pattern[0]:
-            self.ui.plainTextEdit_history.setPlainText(history+"\n"+"Pattern不符合格式！")
-            return
         paste_str=self.ui.plainTextEdit_paste.toPlainText()
         if not paste_str:return
-        info=pattern[0].replace("{}",paste_str)
+        paste_str=paste_str.replace("\n","\\n")
+        info=eval(pattern+"('"+paste_str+"')")
+        if not isinstance(info,str):
+            pyperclip.copy("pattern返回格式不是字符串！")
+            return
         pyperclip.copy(info)
         self.ui.plainTextEdit_history.setPlainText(history+"\n"+info)
 

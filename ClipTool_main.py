@@ -6,7 +6,6 @@ import ClipTool
 from PyQt5.QtWidgets import QApplication, QMainWindow
 import time
 from PyQt5.QtCore import QThread, pyqtSignal
-from FileLabelMode import *
 from PyQt5 import QtGui, QtWidgets
 from tools import *
 from FunPatterns import *

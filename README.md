@@ -5,6 +5,7 @@
 
 ## requirements
 pip install PyQt5
+
 pip install paperclip
 
 ## 使用方法

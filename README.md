@@ -4,7 +4,8 @@
 可以用来标注数据
 
 ## requirements
-需要安装PyQt5
+pip install PyQt5
+pip install paperclip
 
 ## 使用方法
 
